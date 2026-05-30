@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: always
+    environment:
+      - DOMAIN=${DOMAIN}
+      - SIGNUPS_ALLOWED=${SIGNUPS_ALLOWED}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - LOG_LEVEL=warn
+      - EXTENDED_LOGGING=true
+    volumes:
+      - vw-data:/data
+    ports:
+      - "8080:80"
+    # Dokploy asigna el dominio desde su UI usando Traefik — no necesitas Caddy
+
+  backup-r2:
+    image: alpine:3.19
+    container_name: vaultwarden-backup-r2
+    restart: always
+    depends_on:
+      - vaultwarden
+    environment:
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_BUCKET_ENDPOINT=${R2_BUCKET_ENDPOINT}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+      - BACKUP_PASSPHRASE=${BACKUP_PASSPHRASE}
+      - BACKUP_INTERVAL=${BACKUP_INTERVAL}
+    volumes:
+      - vw-data:/data:ro
+      - ./backup-script.sh:/app/backup-script.sh:ro
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache rclone gnupg sqlite && chmod +x /app/backup-script.sh && /app/backup-script.sh"]
+
+volumes:
+  vw-data:

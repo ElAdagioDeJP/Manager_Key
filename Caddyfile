@@ -1,0 +1,38 @@
+key.delfostrading.com {
+    encode gzip
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), midi=(), camera=(), microphone=(), payment=()"
+        -Server
+    }
+
+    # Vaultwarden admin — restrict to local/VPN only
+    @admin path /admin*
+    handle @admin {
+        # Uncomment and set your IP to lock down the admin panel
+        # @notmyip not remote_ip 1.2.3.4
+        # respond @notmyip 403
+        reverse_proxy vaultwarden:80
+    }
+
+    # Notifications/WebSocket (Vaultwarden >= 1.29 uses same port)
+    @websocket header Upgrade websocket
+    handle @websocket {
+        reverse_proxy vaultwarden:80
+    }
+
+    handle {
+        reverse_proxy vaultwarden:80
+    }
+
+    log {
+        output stderr
+        level WARN
+    }
+}
