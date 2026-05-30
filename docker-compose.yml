@@ -15,7 +15,8 @@ services:
       - vw-data:/data
     ports:
       - "8080:80"
-    # Dokploy asigna el dominio desde su UI usando Traefik — no necesitas Caddy
+    networks:
+      - dokploy-network
 
   backup-r2:
     image: alpine:3.19
@@ -37,3 +38,7 @@ services:
 
 volumes:
   vw-data:
+
+networks:
+  dokploy-network:
+    external: true
